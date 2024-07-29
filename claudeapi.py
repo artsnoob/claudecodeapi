@@ -1,8 +1,9 @@
 import textwrap
 import anthropic
 import os
+import shutil
 from typing import List, Dict
-from colorama import init, Fore, Style
+from colorama import init, Fore, Back, Style
 
 init(autoreset=True)
 
@@ -13,6 +14,7 @@ class ClaudeCodingAssistant:
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
         self.messages: List[Dict[str, str]] = []
+        self.terminal_width = shutil.get_terminal_size().columns
 
     def get_multiline_input(self) -> str:
         print(f"\n{Fore.YELLOW}Your message (type '###' on a new line to end input):")
@@ -35,29 +37,32 @@ class ClaudeCodingAssistant:
         for line in message.split("\n"):
             if line.strip().startswith("```"):
                 if in_code_block:
-                    # End of code block, print it with original indentation
-                    print(f"{Fore.CYAN}```")
+                    # End of code block, print it with full-width white background
+                    print(f"{Fore.BLACK}{Back.WHITE}{' ' * self.terminal_width}")
                     for code_line in code_block_lines:
-                        print(f"{Fore.CYAN}{code_line}{Style.RESET_ALL}")
-                    print(f"{Fore.CYAN}```")
+                        padded_line = code_line.ljust(self.terminal_width)
+                        print(f"{Fore.BLACK}{Back.WHITE}{padded_line}{Style.RESET_ALL}")
+                    print(f"{Fore.BLACK}{Back.WHITE}{' ' * self.terminal_width}{Style.RESET_ALL}")
                     code_block_lines = []
                 else:
                     # Start of code block
-                    print(f"{Fore.CYAN}{line}{Style.RESET_ALL}")
+                    print(f"{Fore.BLACK}{Back.WHITE}{' ' * self.terminal_width}")
+                    print(f"{Fore.BLACK}{Back.WHITE}{line.ljust(self.terminal_width)}{Style.RESET_ALL}")
                 in_code_block = not in_code_block
             elif in_code_block:
                 code_block_lines.append(line)
             else:
-                wrapped_lines = textwrap.wrap(line, width=80)
+                wrapped_lines = textwrap.wrap(line, width=self.terminal_width)
                 for wrapped_line in wrapped_lines:
                     print(f"{Fore.WHITE}{wrapped_line}{Style.RESET_ALL}")
         
         # In case the message ends with an unclosed code block
         if code_block_lines:
-            print(f"{Fore.CYAN}```")
+            print(f"{Fore.BLACK}{Back.WHITE}{' ' * self.terminal_width}")
             for code_line in code_block_lines:
-                print(f"{Fore.CYAN}{code_line}{Style.RESET_ALL}")
-            print(f"{Fore.CYAN}```")
+                padded_line = code_line.ljust(self.terminal_width)
+                print(f"{Fore.BLACK}{Back.WHITE}{padded_line}{Style.RESET_ALL}")
+            print(f"{Fore.BLACK}{Back.WHITE}{' ' * self.terminal_width}{Style.RESET_ALL}")
 
     def chat(self):
         self._print_welcome_message()
